@@ -1,7 +1,5 @@
 package com.example.samuraitravel.controller;
 
-import java.util.List;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
@@ -17,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.example.samuraitravel.entity.House;
 import com.example.samuraitravel.entity.Review;
 import com.example.samuraitravel.form.FavoriteRegisterForm;
-import com.example.samuraitravel.form.RegisterForm;
 import com.example.samuraitravel.form.ReservationInputForm;
 import com.example.samuraitravel.repository.FavoriteRepository;
 import com.example.samuraitravel.repository.HouseRepository;
@@ -100,7 +97,7 @@ public class HouseController {
 	    
 	    // houseに基づいてレビューを取得
 	    Page<Review> reviewPage = reviewRepository.findByHouseOrderByCreatedAtDesc(house, pageable);
-
+        
 	    // レビューが見つからなかった場合の処理
 	    if (reviewPage.isEmpty()) {
 	        System.out.println("No reviews found for house id: " + id);
@@ -109,44 +106,23 @@ public class HouseController {
 	    ReservationInputForm reservationInputForm = new ReservationInputForm();
 
 	    // モデルにデータを追加
-	    model.addAttribute("reviewPage", reviewPage); // 変更
+	    model.addAttribute("reviewPage", reviewPage); 
 	    model.addAttribute("house", house);
 	    model.addAttribute("reservationInputForm", reservationInputForm);
-
-	    // ユーザー情報の追加
+	  
+	 // ユーザー情報の追加
 	    if (userDetailsImpl != null) {
 	        model.addAttribute("user", userDetailsImpl.getUser());
+	        // ログインユーザが登録したレビューが存在しないことをチェック
+	        var hasNotMyReview = reviewPage.filter(review -> review.getUser().getId().equals(userDetailsImpl.getUser().getId())).isEmpty();
+	        // 上記のチェック結果をviwにわたす。
+	        model.addAttribute("hasNotMyReview", hasNotMyReview);
+	    } else {
+	        // ログインしていないときは、そもそもボタンの表示がされないが、念の為trueを設定しておく
+	        model.addAttribute("hasNotMyReview", true);
 	    }
 
 	    return "houses/show";
 	}
-	@GetMapping("/register")
-	public String register(@PathVariable(name = "houseId") Integer houseId, Model model, Review userDetailsImpl, List<Review> reviewPage) {
-	    House house = houseRepository.getReferenceById(houseId);
-	    model.addAttribute("house", house);
-	    model.addAttribute("RegisterForm", new RegisterForm());
-
-	 // ユーザー情報の追加
-	    if (userDetailsImpl != null) {
-	        model.addAttribute("user", userDetailsImpl.getUser());
-	        
-	        // ログインユーザが登録したレビューが存在しないことをチェック
-	        boolean hasNotMyReview = true; // デフォルトでレビューがないと仮定
-
-	        for (Review review : reviewPage) { // reviewPageをループ
-	            if (review.getUser() != null && // reviewのUserがnullでないことを確認
-	                review.getUser().getId().equals(userDetailsImpl.getUser().getId())) {
-	                hasNotMyReview = false; // 一致したらfalseに変更
-	                break; // 一つでも見つけたらループを抜ける
-	            }
-	        }
-
-	        // 上記のチェック結果をビューに渡す
-	        model.addAttribute("hasNotMyReview", hasNotMyReview);
-	    } else {
-	        // ログインしていないときは、念のためtrueを設定
-	        model.addAttribute("hasNotMyReview", true);
-	    }
-	    return "review/register";
-	}
+	
 }
