@@ -113,28 +113,26 @@ public class HouseController {
 	    model.addAttribute("house", house);
 	    model.addAttribute("reservationInputForm", reservationInputForm);
 	  
-	 // ユーザー情報の追加
+	 /// ユーザー情報の追加
 	    if (userDetailsImpl != null) {
-	        model.addAttribute("user", userDetailsImpl.getUser());
+	        // ログインユーザ情報の取得
+	        var user = userDetailsImpl.getUser();
+	        model.addAttribute("user", user);
+	        
 	        // ログインユーザが登録したレビューが存在しないことをチェック
 	        var hasNotMyReview = reviewPage.filter(review -> review.getUser().getId().equals(userDetailsImpl.getUser().getId())).isEmpty();
 	        // 上記のチェック結果をviwにわたす。
 	        model.addAttribute("hasNotMyReview", hasNotMyReview);
 	        
-	        var favoriteList = this.favoriteRepository.findByHouse(house);
-            if (favoriteList.isEmpty()) {
-                    model.addAttribute("favoriteId", null);
-            } else {
-                    var favorites = favoriteList.stream()
-                                    .filter(it -> it.getUser().getId().equals(userDetailsImpl.getUser().getId())).toList();
-                    if (favorites.isEmpty()) {
-                            model.addAttribute("favoriteId", null);
-                    } else {
-                            model.addAttribute("favoriteId", favorites.get(0).getId());
-                    }
-            }
+	        var favorite = this.favoriteRepository.findByHouseAndUser(house, user);
+	        if (favorite == null) {
+	            model.addAttribute("favoriteId", null);
+	        } else {
+	            model.addAttribute("favoriteId", favorite.getId());
+	        }
 
-	    } else {
+        
+
 	        // ログインしていないときは、そもそもボタンの表示がされないが、念の為trueを設定しておく
 	        model.addAttribute("hasNotMyReview", true);
 	    }
